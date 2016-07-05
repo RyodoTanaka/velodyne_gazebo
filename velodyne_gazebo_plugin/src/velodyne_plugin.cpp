@@ -1,4 +1,4 @@
-#include "velodyne_plugin.h"
+#include <velodyne_gazebo_plugin/velodyne_plugin.h>
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/transport/transport.hh>
