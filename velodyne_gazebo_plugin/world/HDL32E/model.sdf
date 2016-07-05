@@ -84,8 +84,8 @@ XS		  <ixy>0</ixy>
 			</horizontal>
 		  </scan>
 		  <range>
-			<min>0.05</min>
-			<max>70</max>
+			<min>1.0</min>
+			<max>100</max>
 			<resolution>0.02</resolution>
 		  </range>
 		</ray>
