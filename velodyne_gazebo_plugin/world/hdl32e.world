@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+	
+    <include>
+      <uri>model://sun</uri>
+    </include>
+	
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <model name="velodyne_hdl_32e">
+      <include>
+        <uri>model://world/HDL32E</uri>
+      </include>
+	  
+      <plugin name="velodyne_control" filename="libvelodyne_plugin.so"/>
+    </model>
+
+  </world>
+</sdf>

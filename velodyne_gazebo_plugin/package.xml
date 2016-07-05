@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package>
+  <name>velodyne_gazebo_plugin</name>
+  <version>0.1.0</version>
+  <description>The velodyne_gazebo_plugin package</description>
+
+  <maintainer email="groadpg@gmail.com">RyodoTanaka</maintainer>
+  <license>NewBSD</license>
+  <url type="repository">http://github.com/RyodoTanaka/velodyne_gazebo</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>gazebo_ros</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>gazebo_ros</run_depend>
+  
+  <export>
+	<gazebo_ros                                                                
+		gazebo_model_path="${prefix}"
+		gazebo_media_path="${prefix}"/>
+  </export>
+</package>
