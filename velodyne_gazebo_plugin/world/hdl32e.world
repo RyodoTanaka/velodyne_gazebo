@@ -15,7 +15,9 @@
         <uri>model://world/HDL32E</uri>
       </include>
 	  
-      <plugin name="velodyne_control" filename="libvelodyne_plugin.so"/>
+      <plugin name="velodyne_control" filename="libvelodyne_plugin.so">
+		<rate>1</rate>
+	  </plugin>
     </model>
 
   </world>

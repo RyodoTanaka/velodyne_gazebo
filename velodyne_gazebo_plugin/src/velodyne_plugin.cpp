@@ -1,14 +1,8 @@
 #include <velodyne_gazebo_plugin/velodyne_plugin.h>
-#include <gazebo/gazebo.hh>
-#include <gazebo/physics/physics.hh>
-#include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
-#include <thread>
+#include <memory>
 #include <cmath>
-#include "ros/ros.h"
-#include "ros/callback_queue.h"
-#include "ros/subscribe_options.h"
-#include "std_msgs/Float32.h"
+#include <ros/subscribe_options.h>
 
 namespace gazebo
 {
@@ -16,7 +10,14 @@ namespace gazebo
   GZ_REGISTER_MODEL_PLUGIN(VelodynePlugin)
 
   VelodynePlugin::VelodynePlugin() 
-  {}
+  {
+	this->point_cloud_connect_count = 0;
+  }
+
+  VelodynePlugin::~VelodynePlugin()
+  {
+  	event::Events::DisconnectWorldUpdateBegin(this->update_connection_);
+  }
 
   /// \brief The load function is called by Gazebo when the plugin is
   /// inserted into simulation
@@ -42,25 +43,18 @@ namespace gazebo
 	// Get the rotation Link.
 	this->link = this->joint->GetChild();
 	
-	// Default to zero hertz.
-	double hz = 0;
-	
 	// Check that the velocity element exists, then read the value
-	if (_sdf->HasElement("hz"))
-	  hz = _sdf->Get<double>("hz");
+	if (_sdf->HasElement("rate"))
+	  rate = _sdf->Get<double>("rate");
+	else
+	  this-> rate = 0;
 	
-	this->SetVelocity(hz);
-	
-	// Create the node
-	this->node = transport::NodePtr(new transport::Node());
-	this->node->Init(this->model->GetWorld()->GetName());
-	
+	this->SetVelocity(this->rate);
+			
 	// Create a topic name
-	std::string sub_TopicName = "~/" + this->model->GetName() + "/hz";
-	
-	// Subscribe to the topic, and register a callback
-	this->sub = this->node->Subscribe(sub_TopicName,
-									  &VelodynePlugin::OnMsg, this);
+	std::string sub_TopicName = this->model->GetName() + "/rate";
+	std::string pub_TopicName = this->model->GetName() + "/point_cloud2";
+		
 	// Initialize ros, if it has not already bee initialized.
 	if (!ros::isInitialized())
       {
@@ -71,30 +65,44 @@ namespace gazebo
       }
 	
 	// Create our ROS node. This acts in a similar manner to
-	// the Gazebo node
-	this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
+	// the Gazebo nodeubscribe options
+	this->rosNode.reset(new ros::NodeHandle);
 	
-	// Create a named topic, and subscribe to it.
+	// Create a named topic, and subscribe to it.ubscribe options
 	ros::SubscribeOptions so =
       ros::SubscribeOptions::create<std_msgs::Float32>(
-	  "/" + this->model->GetName() + "/hz",
+	  sub_TopicName,
       1,
       boost::bind(&VelodynePlugin::OnRosMsg, this, _1),
-      ros::VoidPtr(), &this->rosQueue);
+      ros::VoidPtr(), &this->SubrosQueue);
 	this->rosSub = this->rosNode->subscribe(so);
+
+	ros::AdvertiseOptions ao =
+	  ros::AdvertiseOptions::create<sensor_msgs::PointCloud2>(
+	  "/" + this->model->GetName() + "/point_cloud2",
+	  1,
+	  boost::bind(&VelodynePlugin::PC2connectCB, this),
+	  boost::bind(&VelodynePlugin::PC2disconnectCB, this),
+	  ros::VoidPtr(), &this->PubrosQueue);
+	this->rosPub = this->rosNode->advertise(ao);
 	
 	// Spin up the queue helper thread.
-	this->rosQueueThread =
-      std::thread(std::bind(&VelodynePlugin::QueueThread, this));
+	this->SubrosQueueThread =
+	  std::thread(std::bind(&VelodynePlugin::SubQueueThread, this));
+	this->PubrosQueueThread =
+	  std::thread(std::bind(&VelodynePlugin::PubQueueThread, this));
+
+	this->update_connection_ = event::Events::ConnectWorldUpdateBegin(
+      boost::bind(&VelodynePlugin::PointCloudUpdate, this));
   }
 
   /// \brief Set the velocity of the Velodyne
   /// \param[in] _vel New target velocity
-  void VelodynePlugin::SetVelocity(const double &_hz)
+  void VelodynePlugin::SetVelocity(const double &_rate)
   {
 	math::Vector3 linear_vel;
 	math::Vector3 angular_vel;
-    double vel = M_PI*(double)_hz;
+    double vel = M_PI*(double)_rate;
 	linear_vel = math::Vector3::Zero;
 	angular_vel.Set(0, 0, vel);
 	link->SetLinearVel(linear_vel);
@@ -106,24 +114,39 @@ namespace gazebo
   /// of the Velodyne.
   void VelodynePlugin::OnRosMsg(const std_msgs::Float32ConstPtr &_msg)
   {
+	this->rate = _msg->data;
 	this->SetVelocity(_msg->data);
   }
 
   /// \brief ROS helper function that processes messages
-  void VelodynePlugin::QueueThread()
+  void VelodynePlugin::SubQueueThread()
   {
 	static const double timeout = 0.01;
 	while (this->rosNode->ok())
       {
-        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+		this->SubrosQueue.callAvailable(ros::WallDuration(timeout));
       }
   }
 
-  /// \brief Handle incoming message
-  /// \param[in] _msg Repurpose a vector3 message. This function will
-  /// only use the x component.
-  void VelodynePlugin::OnMsg(ConstVector3dPtr &_msg)
+  void VelodynePlugin::PointCloudUpdate(){
+	
+  }
+
+  void VelodynePlugin::PC2connectCB(){
+	this->point_cloud_connect_count++;
+  }
+
+  void VelodynePlugin::PC2disconnectCB(){
+	this->point_cloud_connect_count--;
+  }
+
+  /// \brief ROS helper function that processes messages
+  void VelodynePlugin::PubQueueThread()
   {
-	this->SetVelocity(_msg->x());
+	static const double timeout = 0.01;
+	while (this->rosNode->ok())
+      {
+		this->PubrosQueue.callAvailable(ros::WallDuration(timeout));
+      }
   }
 }

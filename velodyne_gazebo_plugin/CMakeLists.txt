@@ -4,6 +4,7 @@ project(velodyne_gazebo_plugin)
 find_package(catkin REQUIRED
   roscpp
   std_msgs
+  sensor_msgs
   gazebo_ros
   )
 

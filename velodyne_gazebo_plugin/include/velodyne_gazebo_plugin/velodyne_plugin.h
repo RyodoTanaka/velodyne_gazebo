@@ -4,13 +4,13 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/transport/transport.hh>
+#include <gazebo/common/Events.hh>
 #include <gazebo/msgs/msgs.hh>
 #include <thread>
-#include <memory>
-#include "ros/ros.h"
-#include "ros/callback_queue.h"
-#include "ros/subscribe_options.h"
-#include "std_msgs/Float32.h"
+#include <ros/ros.h>
+#include <ros/callback_queue.h>
+#include <std_msgs/Float32.h>
+#include <sensor_msgs/PointCloud2.h>
 
 namespace gazebo
 {
@@ -20,6 +20,8 @@ namespace gazebo
     /// \brief Constructor
     public: VelodynePlugin();
 
+	/// \brief Destructor
+    public: ~VelodynePlugin();
     /// \brief The load function is called by Gazebo when the plugin is
     /// inserted into simulation
     /// \param[in] _model A pointer to the model that this plugin is
@@ -29,7 +31,7 @@ namespace gazebo
 
     /// \brief Set the velocity of the Velodyne
     /// \param[in] _vel New target velocity
-    public: void SetVelocity(const double &_hz);
+    public: void SetVelocity(const double &_rate);
 
     /// \brief Handle an incoming message from ROS
     /// \param[in] _msg A float value that is used to set the velocity
@@ -37,19 +39,23 @@ namespace gazebo
     public: void OnRosMsg(const std_msgs::Float32ConstPtr &_msg);
 
     /// \brief ROS helper function that processes messages
-    private: void QueueThread();
-    
-    /// \brief Handle incoming message
-    /// \param[in] _msg Repurpose a vector3 message. This function will
-    /// only use the x component.
-    private: void OnMsg(ConstVector3dPtr &_msg);
+    private: void SubQueueThread();
 
+	/// \brief Update Point Cloud datas
+    protected: void PointCloudUpdate();
+
+	/// \brief connection counter
+    private: void PC2connectCB();
+
+	/// \brief disconnection counter
+    private: void PC2disconnectCB();
+
+	/// \brief ROS helper function that processes messages
+    private: void PubQueueThread();
+	
 	/// member
     /// \brief A node used for transport
     private: transport::NodePtr node;
-
-    /// \brief A subscriber to a named topic.
-    private: transport::SubscriberPtr sub;
 
     /// \brief Pointer to the model.
     private: physics::ModelPtr model;
@@ -60,17 +66,38 @@ namespace gazebo
 	/// \brief Pointer to the link.
     private: physics::LinkPtr link;
 
+	/// \brief Velodyne Turning rate;
+    private : double rate;
+	
 	/// \brief A node use for ROS transport
     private: std::unique_ptr<ros::NodeHandle> rosNode;
 
     /// \brief A ROS subscriber
     private: ros::Subscriber rosSub;
 
-    /// \brief A ROS callbackqueue that helps process messages
-    private: ros::CallbackQueue rosQueue;
+	/// \breaf A ROS publisher
+    private: ros::Publisher rosPub;
 
-    /// \brief A thread the keeps running the rosQueue
-    private: std::thread rosQueueThread;
+    /// \brief A ROS callbackqueue that helps process messages
+    private: ros::CallbackQueue SubrosQueue;
+
+    /// \brief A thread the keeps running the SubrosQueue
+    private: std::thread SubrosQueueThread;
+
+	/// \brief A ROS callback that counts the connection
+    private: ros::CallbackQueue PubrosQueue;
+
+	/// \brief A thread the keeps runnning the PubrosQueue
+    private: std::thread PubrosQueueThread;
+
+	/// \brief A counter for connection
+    private : int point_cloud_connect_count;
+	
+	/// \brief Pointer to the update event connection
+    private: event::ConnectionPtr update_connection_;
+
+	/// \brief Point Cloud data
+    privae: sensor_msgs::PointCloud2ConstPtr pc2_data;
   };
 
 }
