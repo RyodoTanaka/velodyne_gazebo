@@ -16,7 +16,17 @@
       </include>
 	  
       <plugin name="velodyne_control" filename="libvelodyne_plugin.so">
-		<rate>1</rate>
+		<sensor_name>HDL_32E</sensor_name>
+		<frame_name>hdl_32e</frame_name>
+		<topic_name>pc2_data</topic_name>
+		<min_range>1.0</min_range>
+		<max_range>100.0</max_range>
+		<vertical_min_angle>-0.53529248</vertical_min_angle>
+		<vertical_max_angle>0.18622663</vertical_max_angle>
+		<vertical_ray_number>32</vertical_ray_number>
+		<point_number>700000</point_number>
+		<noise>0.02</noise>
+		<rate>10</rate>
 	  </plugin>
     </model>
 

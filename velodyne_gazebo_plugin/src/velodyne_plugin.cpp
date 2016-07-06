@@ -43,17 +43,95 @@ namespace gazebo
 	// Get the rotation Link.
 	this->link = this->joint->GetChild();
 	
-	// Check that the velocity element exists, then read the value
+
+	// Get parameters
+	std::cout << std::endl;
+	std::cout << "VELODYNE PLUGIN PARAMETER" << std::endl;
+	
+	std::string sensor_name;
+	if(_sdf->HasElement("sensor_name"))
+	  sensor_name = _sdf->Get<std::string>("sensor_name");
+	else
+	  sensor_name =  this->model->GetName();
+	std::cout << " * sensor_name : " << sensor_name.c_str() << std::endl;
+	
+	std::string frame_name;
+	if(_sdf->HasElement("frame_name"))
+	  frame_name = _sdf->Get<std::string>("frame_name");
+	else
+	  frame_name = sensor_name;
+	std::cout << " * frame_name : " << frame_name.c_str() << std::endl;
+	
+	std::string PCtopic_name;
+	if(_sdf->HasElement("topic_name"))
+	  PCtopic_name = _sdf->Get<std::string>("topic_name");
+	else
+	  PCtopic_name = " * point_cloud2";
+
+	// Create a topic name
+	std::string sub_TopicName = sensor_name + "/rate";
+	std::string pub_TopicName = sensor_name + "/" + PCtopic_name;
+
+	std::cout << " * rate topic_name : " << sub_TopicName.c_str() << std::endl; 
+	std::cout << " * point cloud topic_name : " << pub_TopicName.c_str() << std::endl;
+	
+	double min_range;
+	if(_sdf->HasElement("min_range"))
+	  min_range = _sdf->Get<double>("min_range");
+	else
+	  min_range = 0.5;
+	std::cout << " * min_range : " << min_range << std::endl;
+	
+	double max_range;
+	if(_sdf->HasElement("max_range"))
+	  max_range = _sdf->Get<double>("max_range");
+	else
+	  max_range = 70.0;
+	std::cout << " * max_range : " << max_range << std::endl;
+	
+	double vertical_min_angle;
+	if(_sdf->HasElement("vertical_min_angle"))
+	  vertical_min_angle = _sdf->Get<double>("vertical_min_angle");
+	else
+	  vertical_min_angle = -0.53529248;
+	std::cout << " * vertical_min_angle : " << vertical_min_angle << std::endl;
+	
+	double vertical_max_angle;
+	if(_sdf->HasElement("verical_max_angle"))
+	  vertical_max_angle = _sdf->Get<double>("vertical_max_angle");
+	else
+	  vertical_max_angle = 0.18622663;
+	std::cout << " * vertical_max_angle : " << vertical_max_angle << std::endl;
+
+	int vertical_ray_number;
+	if(_sdf->HasElement("vertical_ray_number"))
+	  vertical_ray_number = _sdf->Get<int>("vertical_ray_number");
+	else
+	  vertical_ray_number = 32;
+	std::cout << " * vertical_ray_number : " << vertical_ray_number << std::endl;
+
+	unsigned int point_number;
+	if(_sdf->HasElement("point_number"))
+	  point_number = _sdf->Get<unsigned int>("point_number");
+	else
+	  point_number = 700000;
+	std::cout << " * point_number : " << point_number << std::endl;
+	
+	double noise;
+	if(_sdf->HasElement("noise"))
+	  noise = _sdf->Get<double>("noise");
+	else
+	  noise = 0.02;
+	std::cout << " * noise : " << noise << std::endl;
+
 	if (_sdf->HasElement("rate"))
 	  rate = _sdf->Get<double>("rate");
 	else
 	  this-> rate = 0;
+	std::cout << " * rate : " << rate << std::endl;
+	std::cout << std::endl;
 	
 	this->SetVelocity(this->rate);
-			
-	// Create a topic name
-	std::string sub_TopicName = this->model->GetName() + "/rate";
-	std::string pub_TopicName = this->model->GetName() + "/point_cloud2";
 		
 	// Initialize ros, if it has not already bee initialized.
 	if (!ros::isInitialized())
@@ -79,7 +157,7 @@ namespace gazebo
 
 	ros::AdvertiseOptions ao =
 	  ros::AdvertiseOptions::create<sensor_msgs::PointCloud2>(
-	  "/" + this->model->GetName() + "/point_cloud2",
+	  pub_TopicName,
 	  1,
 	  boost::bind(&VelodynePlugin::PC2connectCB, this),
 	  boost::bind(&VelodynePlugin::PC2disconnectCB, this),

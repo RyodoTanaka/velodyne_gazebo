@@ -97,7 +97,7 @@ namespace gazebo
     private: event::ConnectionPtr update_connection_;
 
 	/// \brief Point Cloud data
-    privae: sensor_msgs::PointCloud2ConstPtr pc2_data;
+    private: sensor_msgs::PointCloud2ConstPtr pc2_data;
   };
 
 }
