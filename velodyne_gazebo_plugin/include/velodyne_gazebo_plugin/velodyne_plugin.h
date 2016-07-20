@@ -5,6 +5,7 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/common/Events.hh>
+#include <gazebo/math/Angle.hh>
 #include <gazebo/msgs/msgs.hh>
 #include <thread>
 #include <ros/ros.h>
@@ -19,9 +20,7 @@ namespace gazebo
   {
     /// \brief Constructor
     public: VelodynePlugin();
-
-	/// \brief Destructor
-    public: ~VelodynePlugin();
+    
     /// \brief The load function is called by Gazebo when the plugin is
     /// inserted into simulation
     /// \param[in] _model A pointer to the model that this plugin is
@@ -98,6 +97,8 @@ namespace gazebo
 
 	/// \brief Point Cloud data
     private: sensor_msgs::PointCloud2ConstPtr pc2_data;
+
+    private: math::Angle now;
   };
 
 }
