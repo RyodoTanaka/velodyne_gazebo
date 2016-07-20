@@ -1,5 +1,6 @@
 #include <velodyne_gazebo_plugin/velodyne_plugin.h>
 #include <gazebo/msgs/msgs.hh>
+#include <gazebo/physics/JointState.hh>
 #include <memory>
 #include <cmath>
 #include <ros/subscribe_options.h>
@@ -12,11 +13,6 @@ namespace gazebo
   VelodynePlugin::VelodynePlugin() 
   {
 	this->point_cloud_connect_count = 0;
-  }
-
-  VelodynePlugin::~VelodynePlugin()
-  {
-  	event::Events::DisconnectWorldUpdateBegin(this->update_connection_);
   }
 
   /// \brief The load function is called by Gazebo when the plugin is
@@ -75,54 +71,12 @@ namespace gazebo
 	std::cout << " * rate topic_name : " << sub_TopicName.c_str() << std::endl; 
 	std::cout << " * point cloud topic_name : " << pub_TopicName.c_str() << std::endl;
 	
-	double min_range;
-	if(_sdf->HasElement("min_range"))
-	  min_range = _sdf->Get<double>("min_range");
-	else
-	  min_range = 0.5;
-	std::cout << " * min_range : " << min_range << std::endl;
-	
-	double max_range;
-	if(_sdf->HasElement("max_range"))
-	  max_range = _sdf->Get<double>("max_range");
-	else
-	  max_range = 70.0;
-	std::cout << " * max_range : " << max_range << std::endl;
-	
-	double vertical_min_angle;
-	if(_sdf->HasElement("vertical_min_angle"))
-	  vertical_min_angle = _sdf->Get<double>("vertical_min_angle");
-	else
-	  vertical_min_angle = -0.53529248;
-	std::cout << " * vertical_min_angle : " << vertical_min_angle << std::endl;
-	
-	double vertical_max_angle;
-	if(_sdf->HasElement("verical_max_angle"))
-	  vertical_max_angle = _sdf->Get<double>("vertical_max_angle");
-	else
-	  vertical_max_angle = 0.18622663;
-	std::cout << " * vertical_max_angle : " << vertical_max_angle << std::endl;
-
-	int vertical_ray_number;
-	if(_sdf->HasElement("vertical_ray_number"))
-	  vertical_ray_number = _sdf->Get<int>("vertical_ray_number");
-	else
-	  vertical_ray_number = 32;
-	std::cout << " * vertical_ray_number : " << vertical_ray_number << std::endl;
-
 	unsigned int point_number;
 	if(_sdf->HasElement("point_number"))
 	  point_number = _sdf->Get<unsigned int>("point_number");
 	else
 	  point_number = 700000;
 	std::cout << " * point_number : " << point_number << std::endl;
-	
-	double noise;
-	if(_sdf->HasElement("noise"))
-	  noise = _sdf->Get<double>("noise");
-	else
-	  noise = 0.02;
-	std::cout << " * noise : " << noise << std::endl;
 
 	if (_sdf->HasElement("rate"))
 	  rate = _sdf->Get<double>("rate");
@@ -133,6 +87,7 @@ namespace gazebo
 	
 	this->SetVelocity(this->rate);
 		
+
 	// Initialize ros, if it has not already bee initialized.
 	if (!ros::isInitialized())
       {
@@ -205,9 +160,14 @@ namespace gazebo
 		this->SubrosQueue.callAvailable(ros::WallDuration(timeout));
       }
   }
+  
+  void VelodynePlugin::PointCloudUpdate()
+  {
+	// ROS_INFO("here");
+	// math::Angle now;
+    now = this->joint->GetAngle(0);
+	ROS_INFO("%10.10lf", now.Degree());
 
-  void VelodynePlugin::PointCloudUpdate(){
-	
   }
 
   void VelodynePlugin::PC2connectCB(){
